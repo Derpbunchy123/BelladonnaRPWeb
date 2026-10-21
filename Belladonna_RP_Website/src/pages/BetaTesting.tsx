@@ -283,7 +283,7 @@ const BetaTesting = () => {
           <Button
             size="lg"
             className="western-gradient text-sm font-body font-medium tracking-widest uppercase px-10 py-6 border-0 text-foreground hover:opacity-90 transition-all hover:scale-105"
-            onClick={() => window.open(BETA_FORM_URL, "_blank")}
+            onClick={() => window.open(https://forms.gle/XLcVX3W6Pr53gGBH7, "_blank")}
           >
             Submit Application
             <ArrowRight className="ml-2 h-4 w-4" />
