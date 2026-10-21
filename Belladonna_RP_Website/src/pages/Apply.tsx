@@ -211,7 +211,7 @@ const Apply = () => {
               "Show your understanding of serious, immersive city roleplay",
               "Check your spelling and grammar before submitting",
               "Be patient — quality applications take time to review",
-              "Review the Departments page before applying to a specific faction",
+              "Review the Factions page to see what we offer before applying to a specific faction",
             ].map((tip, i) => (
               <li key={i} className="flex items-start gap-3">
                 <span
