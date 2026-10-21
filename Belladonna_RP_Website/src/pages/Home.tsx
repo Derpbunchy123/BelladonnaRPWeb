@@ -64,7 +64,7 @@ const Home = () => {
     {
       icon: <Shield className="h-5 w-5" />,
       title: "Active Departments",
-      desc: "LSPD, LSFD, the District Attorney's office, and more — each with structured hierarchies and dedicated members.",
+      desc: "LSPD, EMS, DOJ, and more — each with structured hierarchies and dedicated members.",
     },
     {
       icon: <Briefcase className="h-5 w-5" />,
