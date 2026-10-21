@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronDown, Skull, Moon, Sparkles, Flame, HelpCircle } from "lucide-react";
+import { ArrowRight, ChevronDown, Skull, Moon, Sparkles, Flame, HelpCircle, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { serverConfig } from "@/config/serverConfig";
 
@@ -35,6 +35,14 @@ const factions = [
     tag: "Supernatural",
     name: "Warlocks",
     description: `Warlocks are magic users who follow their own path in the supernatural world. Through practice, knowledge, and their connection to magic, they develop abilities that can shape how they live and interact with others. Their approach to magic is their own, and no two warlocks need to follow the same path.`,
+    dossierNote: "This faction's dossier is currently under construction.",
+  },
+  {
+    id: "hunters",
+    icon: <Shield className="h-5 w-5" />,
+    tag: "Organization",
+    name: "The Hunters Brigade",
+    description: `The Hunters Brigade is an organization dedicated to protecting the mortal population from the dangers of the supernatural world. Operating in secrecy, its members work to prevent supernatural beings from exposing their existence to the public. The Brigade does not answer to ordinary law enforcement, and its methods are not always bound by the law. To those who know the truth, the Hunters Brigade serves as a reminder that the supernatural world has consequences for those who expose it.`,
     dossierNote: "This faction's dossier is currently under construction.",
   },
   {
