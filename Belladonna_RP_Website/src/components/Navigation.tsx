@@ -16,7 +16,6 @@ const navItems: NavItem[] = [
   { name: "About", path: "/about" },
   { name: "Factions", path: "/departments" },
   { name: "Rules", path: "/rules" },
-  { name: "Community", path: "/community" },
   { name: "Apply", path: "/apply" },
   { name: "Store", path: "/store" },
   { name: "Beta Testing", path: "/beta-testing", accent: true },
