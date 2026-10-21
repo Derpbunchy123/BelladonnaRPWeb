@@ -11,6 +11,7 @@ import Apply from "./pages/Apply";
 import Store from "./pages/Store";
 import Departments from "./pages/Departments";
 import Community from "./pages/Community";
+import BetaTesting from "./pages/BetaTesting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/store" element={<Store />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/community" element={<Community />} />
+            <Route path="/beta-testing" element={<BetaTesting />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
