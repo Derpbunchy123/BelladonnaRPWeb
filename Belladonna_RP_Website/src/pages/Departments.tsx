@@ -172,7 +172,7 @@ const Departments = () => {
         >
           <p className="font-body text-xs text-muted-foreground leading-relaxed text-center">
             <span className="font-medium" style={{ color: "hsl(340 30% 60%)" }}>Note: </span>
-            Faction dossiers are published as lore is established in the city. Mind control, memory alteration, and forced transformations require staff approval and follow a D20 challenge procedure. Review the applicable faction guide before play.
+            Faction dossiers are published as lore established in the city. Mind control, memory alteration, and forced transformations must follow a D20 challenge procedure. Please refer to the applicable faction dossier before you play.
           </p>
         </div>
 
