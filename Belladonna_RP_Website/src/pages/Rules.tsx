@@ -64,7 +64,7 @@ const Rules = () => {
         "4.7 Gang Wars — Gang wars must be declared through the KP and formally ended through the KP. Gangs are expected to follow the established declaration and conclusion process. Staff may intervene when a conflict violates server rules.",
         "4.8 Territory and Rival Attacks — BelladonnaRP does not currently impose special territory restrictions or additional restrictions on attacking rival gang members. All attacks must still comply with the main city rules, including valid roleplay escalation and the five-minute lethal requirement.",
         "4.9 Gang Violations — Gang violations are tracked separately from ordinary individual staff actions. When a gang is brought into a staff ticket over a major rule violation, it may receive one or more violation points. Staff determine the number of points and appropriate response. There is no automatic warning ladder or fixed punishment sequence for gang violations.",
-        "4.10 The Secret Code: When submitting your whitelist application you will need to know this word: BANANA."
+        "4.10 The Secret Code: When submitting your whitelist application you will need to know this word: BANANA.",
       ],
     },
     {
