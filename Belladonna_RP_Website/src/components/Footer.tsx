@@ -53,7 +53,7 @@ const Footer = () => {
               {[
                 { name: "Home", path: "/" },
                 { name: "About the City", path: "/about" },
-                { name: "Departments", path: "/departments" },
+                { name: "Factions", path: "/departments" },
                 { name: "City Rules", path: "/rules" },
                 { name: "Community", path: "/community" },
                 { name: "Applications", path: "/apply" },
@@ -102,7 +102,7 @@ const Footer = () => {
                 to="/departments"
                 className="block font-body text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 tracking-wide"
               >
-                Departments
+                Factions
               </Link>
             </div>
           </div>
