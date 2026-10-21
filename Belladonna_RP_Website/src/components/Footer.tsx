@@ -55,7 +55,6 @@ const Footer = () => {
                 { name: "About the City", path: "/about" },
                 { name: "Factions", path: "/departments" },
                 { name: "City Rules", path: "/rules" },
-                { name: "Community", path: "/community" },
                 { name: "Applications", path: "/apply" },
                 { name: "Store", path: "/store" },
               ].map((item) => (
