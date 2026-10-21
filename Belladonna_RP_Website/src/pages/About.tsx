@@ -103,7 +103,7 @@ const sections = [
     content: (
       <div className="space-y-4">
         <p className="font-body text-sm text-muted-foreground leading-relaxed">
-          Long before the supernatural factions established themselves, there were three beings whose existence predates the world as most know it. Two brothers and their sister are known collectively as the Triune.
+          Long before the supernatural factions established themselves, there were three beings whose existence predates the world as most know it. Three brothers who go by the name of The Will, The Vessel, and The Veil are known collectively as the Triune.
         </p>
         <p className="font-body text-sm text-muted-foreground leading-relaxed">
           Their origins remain largely unknown. Connected to the Source, where the world's leylines are strongest, they played a part in shaping the laws that govern existence. Their influence reaches across the supernatural world, though even their power has its limits.
