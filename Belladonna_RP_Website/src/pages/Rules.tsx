@@ -226,7 +226,7 @@ const Rules = () => {
           />
           <p className="font-body text-xs text-muted-foreground leading-relaxed">
             <span className="font-medium" style={{ color: "hsl(38 60% 65%)" }}>Additional Documents: </span>
-            Department SOPs, supernatural faction guides, gang and KP procedures, and other city policies supplement this rulebook. Players are responsible for following all documents applicable to their characters and activities.
+            Department SOPs, supernatural faction dossier, gang and KP procedures, and other city policies supplement this rulebook. Players are responsible for following all documents applicable to their characters and activities.
           </p>
         </div>
 
@@ -242,7 +242,7 @@ const Rules = () => {
             Questions About the Rules?
           </h2>
           <p className="font-body text-sm text-muted-foreground leading-relaxed">
-            If you are unsure how a rule applies, ask a staff member before proceeding with an action that may cause a significant dispute. We are here to help ensure everyone has a great experience.
+            If you are unsure how a rule applies, open a ticket and ask a staff member before proceeding with an action that may cause a significant dispute. We are here to help ensure everyone has a great experience.
           </p>
         </div>
       </div>
