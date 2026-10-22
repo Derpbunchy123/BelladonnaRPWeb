@@ -1,6 +1,53 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+/**
+ * Strict allowlist of internal paths that are safe redirect targets
+ * after Discord OAuth completes. Absolute URLs, protocol-relative URLs,
+ * backslash tricks, and any path not in this list are rejected.
+ */
+const ALLOWED_RETURN_PATHS = new Set([
+  "/apply",
+  "/apply/",
+]);
+
+/**
+ * Validates a returnTo value from sessionStorage.
+ * Returns the path if it is safe, or "/apply" as the fallback.
+ */
+function sanitizeReturnTo(raw: string | null): string {
+  if (!raw) return "/apply";
+
+  const trimmed = raw.trim();
+
+  if (!trimmed) return "/apply";
+
+  // Reject protocol-relative URLs (//evil.com)
+  if (/^\/\//u.test(trimmed)) return "/apply";
+  // Reject backslash-prefixed paths (\\evil.com)
+  if (/^[\\]/u.test(trimmed)) return "/apply";
+  // Reject URLs with a scheme (http://, javascript:, data:, etc.)
+  if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/u.test(trimmed)) return "/apply";
+
+  // Reject encoded bypass attempts (e.g. %2F%2F → //, %5C → \)
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(trimmed);
+    } catch {
+      return "";
+    }
+  })();
+  if (!decoded) return "/apply";
+  if (/^\/\//u.test(decoded)) return "/apply";
+  if (/^[\\]/u.test(decoded)) return "/apply";
+  if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/u.test(decoded)) return "/apply";
+
+  // Only navigate to explicitly allowed internal paths
+  if (ALLOWED_RETURN_PATHS.has(trimmed)) return trimmed;
+
+  return "/apply";
+}
+
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -25,7 +72,12 @@ const AuthCallback = () => {
     }
 
     const savedState = sessionStorage.getItem("discord_oauth_state");
-    const returnTo = sessionStorage.getItem("discord_oauth_return") || "/apply";
+
+    // Read and sanitize the return path immediately — before any async work —
+    // so an attacker cannot race the removal to influence the redirect target.
+    const rawReturnTo = sessionStorage.getItem("discord_oauth_return");
+    const returnTo = sanitizeReturnTo(rawReturnTo);
+
     sessionStorage.removeItem("discord_oauth_state");
     sessionStorage.removeItem("discord_oauth_return");
 
@@ -55,7 +107,6 @@ const AuthCallback = () => {
         return;
       }
 
-      // Guard: read raw text first so we never call .json() on an empty or HTML body
       const contentType = res.headers.get("content-type") ?? "";
       const rawText = await res.text().catch(() => "");
 
@@ -72,7 +123,6 @@ const AuthCallback = () => {
         return;
       }
 
-      // If the response is not JSON (e.g. an HTML 404/500 page from Cloudflare), surface it
       if (!contentType.includes("application/json")) {
         setError(
           res.ok
@@ -105,7 +155,6 @@ const AuthCallback = () => {
             : "Authentication failed. Please try again.";
         setError(msg);
 
-        // Surface missing-env-var errors from the function clearly
         if (res.status === 503) {
           setDetail(
             "The Cloudflare Pages Function is running but a required environment variable " +
@@ -130,6 +179,8 @@ const AuthCallback = () => {
 
       sessionStorage.setItem("discord_user", JSON.stringify(data.user));
       sessionStorage.setItem("discord_token", data.session_token as string);
+
+      // Navigate to the validated, allowlisted internal path only
       navigate(returnTo, { replace: true });
     };
 
