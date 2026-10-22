@@ -1,45 +1,84 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { FileText, CheckCircle2, ArrowRight, ExternalLink, Shield, Briefcase, Flame } from "lucide-react";
+import {
+  FileText,
+  CheckCircle2,
+  ArrowRight,
+  ExternalLink,
+  Shield,
+  Briefcase,
+  Flame,
+  FlaskConical,
+  Users,
+  Lock,
+} from "lucide-react";
 import { serverConfig } from "@/config/serverConfig";
+import ApplicationForm from "@/components/ApplicationForm";
+import { useDiscordAuth } from "@/hooks/useDiscordAuth";
 
-interface ApplicationLink {
+interface ApplicationType {
+  id: string;
   icon: React.ReactNode;
   title: string;
   desc: string;
-  href: string;
-  label: string;
   available: boolean;
+  comingSoon?: boolean;
 }
 
-const applicationLinks: ApplicationLink[] = [
+const applicationTypes: ApplicationType[] = [
   {
+    id: "whitelist",
+    icon: <FileText className="h-5 w-5" />,
+    title: "Server Whitelist Application",
+    desc: "Apply for whitelist access to join the BelladonnaRP server. Required for all new players.",
+    available: true,
+  },
+  {
+    id: "staff",
     icon: <Shield className="h-5 w-5" />,
     title: "Staff Application",
     desc: "Apply to join the BelladonnaRP moderation and administration team.",
-    href: "#",
-    label: "Not Yet Available",
-    available: false,
+    available: true,
   },
   {
+    id: "beta",
+    icon: <FlaskConical className="h-5 w-5" />,
+    title: "Beta Testing Application",
+    desc: "Apply for early access to unreleased features. Help shape the future of Belladonna.",
+    available: true,
+  },
+  {
+    id: "business",
     icon: <Briefcase className="h-5 w-5" />,
-    title: "Business Application",
+    title: "Business Owner Application",
     desc: "Register a business within Belladonna. Applications reviewed by the Business Management division.",
-    href: "#",
-    label: "Not Yet Available",
     available: false,
+    comingSoon: true,
   },
   {
+    id: "gang",
     icon: <Flame className="h-5 w-5" />,
     title: "Gang / Organization Application",
-    desc: "Register a criminal organization under the Gang Management framework. Coming once the division launches.",
-    href: "#",
-    label: "Not Yet Available",
+    desc: "Register a criminal organization under the Gang Management framework.",
     available: false,
+    comingSoon: true,
   },
 ];
 
 const Apply = () => {
+  const [activeForm, setActiveForm] = useState<string | null>(null);
+  const { user, loading: authLoading } = useDiscordAuth();
+
+  if (activeForm) {
+    return (
+      <ApplicationForm
+        type={activeForm}
+        onBack={() => setActiveForm(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen pt-32 pb-20 px-4">
       <div className="container mx-auto max-w-4xl">
@@ -81,8 +120,8 @@ const Apply = () => {
                 desc: "Make sure you have read and understood all server rules before applying. Applications that show no awareness of our standards are declined immediately.",
               },
               {
-                title: "Step 2: Join Discord",
-                desc: "You must be in our Discord server before your application can be processed. Staff will contact you there with results.",
+                title: "Step 2: Sign In with Discord",
+                desc: "You must authenticate with your Discord account to apply. This verifies your identity and links your application to your Discord profile.",
               },
               {
                 title: "Step 3: Submit Your Application",
@@ -124,19 +163,61 @@ const Apply = () => {
           </div>
         </div>
 
-        {/* All application links */}
+        {/* Discord auth status */}
+        {!authLoading && !user && (
+          <div
+            className="rounded-sm p-5 mb-6 border flex items-center gap-4"
+            style={{
+              background: "hsl(38 60% 14% / 0.18)",
+              borderColor: "hsl(38 60% 32% / 0.45)",
+            }}
+          >
+            <Lock className="h-4 w-4 flex-shrink-0" style={{ color: "hsl(38 60% 60%)" }} />
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-sm text-muted-foreground leading-relaxed">
+                <span className="font-medium" style={{ color: "hsl(38 60% 65%)" }}>
+                  Discord Sign-In Required:{" "}
+                </span>
+                You must sign in with Discord to access and submit any application. Click an available application below to begin.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!authLoading && user && (
+          <div
+            className="rounded-sm p-5 mb-6 border flex items-center gap-4"
+            style={{
+              background: "hsl(140 40% 12% / 0.2)",
+              borderColor: "hsl(140 40% 28% / 0.45)",
+            }}
+          >
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: "hsl(140 40% 55%)" }} />
+            <p className="font-body text-sm text-muted-foreground leading-relaxed">
+              <span className="font-medium" style={{ color: "hsl(140 40% 60%)" }}>
+                Signed in as {user.username}
+              </span>
+              {" "}— You may now access available application forms below.
+            </p>
+          </div>
+        )}
+
+        {/* Application types */}
         <div className="stat-card-glow rounded-sm p-8 mb-6">
-          <h2 className="font-display text-2xl font-medium text-foreground mb-2">
-            All Applications
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <Users className="h-5 w-5 text-bella-rose flex-shrink-0" />
+            <h2 className="font-display text-2xl font-medium text-foreground">
+              All Applications
+            </h2>
+          </div>
           <p className="font-body text-sm text-muted-foreground mb-7 leading-relaxed">
             You must be in our Discord before applying to any department, business, or organization.
           </p>
 
           <div className="space-y-3">
-            {applicationLinks.map((app, i) => (
+            {applicationTypes.map((app) => (
               <div
-                key={i}
+                key={app.id}
                 className="flex items-center justify-between gap-4 p-5 rounded-sm border transition-all duration-200"
                 style={{
                   background: app.available
@@ -177,14 +258,14 @@ const Apply = () => {
                       borderColor: "hsl(344 47% 30% / 0.45)",
                       color: "hsl(345 40% 80%)",
                     }}
-                    onClick={() => window.open(app.href, "_blank")}
+                    onClick={() => setActiveForm(app.id)}
                   >
-                    {app.label}
+                    Apply Now
                     <ExternalLink className="ml-1.5 h-3 w-3" />
                   </Button>
                 ) : (
                   <span
-                    className="flex-shrink-0 font-body text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 rounded-sm"
+                    className="flex-shrink-0 font-body text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 rounded-sm whitespace-nowrap"
                     style={{
                       background: "hsl(38 60% 18% / 0.2)",
                       color: "hsl(38 60% 55%)",
@@ -211,7 +292,7 @@ const Apply = () => {
               "Show your understanding of serious, immersive city roleplay",
               "Check your spelling and grammar before submitting",
               "Be patient — quality applications take time to review",
-              "Review the Factions page to see what we offer before applying to a specific faction",
+              "Review the Departments page before applying to a specific faction",
             ].map((tip, i) => (
               <li key={i} className="flex items-start gap-3">
                 <span
