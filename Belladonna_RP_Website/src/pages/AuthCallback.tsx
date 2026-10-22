@@ -5,6 +5,7 @@ const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -34,27 +35,110 @@ const AuthCallback = () => {
       return;
     }
 
-    fetch("/api/auth/discord/callback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Authentication failed");
-        sessionStorage.setItem("discord_user", JSON.stringify(data.user));
-        sessionStorage.setItem("discord_token", data.session_token);
-        navigate(returnTo, { replace: true });
-      })
-      .catch((e) => {
-        setError(e.message || "Authentication failed. Please try again.");
+    const exchangeCode = async () => {
+      let res: Response;
+
+      try {
+        res = await fetch("/api/auth/discord/callback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+      } catch (networkErr) {
+        setError("Network error — could not reach the authentication endpoint.");
+        setDetail(
+          "The POST request to /api/auth/discord/callback failed before receiving a response. " +
+          "Check that the Cloudflare Pages Function is deployed and that the functions/ directory " +
+          "is at the repository root (not inside Belladonna_RP_Website/)."
+        );
+        setTimeout(() => navigate("/apply"), 6000);
+        return;
+      }
+
+      // Guard: read raw text first so we never call .json() on an empty or HTML body
+      const contentType = res.headers.get("content-type") ?? "";
+      const rawText = await res.text().catch(() => "");
+
+      if (!rawText || rawText.trim() === "") {
+        setError("Authentication endpoint returned an empty response.");
+        setDetail(
+          `HTTP ${res.status}. The endpoint at /api/auth/discord/callback returned no body. ` +
+          "This usually means the Cloudflare Pages Function was not found (404/405) or the " +
+          "deployment did not include the functions/ directory. " +
+          "Verify the function file exists at functions/api/auth/discord/callback.ts relative " +
+          "to the Cloudflare Pages build root."
+        );
+        setTimeout(() => navigate("/apply"), 6000);
+        return;
+      }
+
+      // If the response is not JSON (e.g. an HTML 404/500 page from Cloudflare), surface it
+      if (!contentType.includes("application/json")) {
+        setError(
+          res.ok
+            ? "Authentication endpoint returned an unexpected response format."
+            : `Authentication endpoint error (HTTP ${res.status}).`
+        );
+        setDetail(
+          "The response Content-Type was not application/json. " +
+          "The server likely returned an HTML error page instead of the Cloudflare Pages Function. " +
+          "Raw response (first 300 chars): " + rawText.slice(0, 300)
+        );
+        setTimeout(() => navigate("/apply"), 6000);
+        return;
+      }
+
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        setError("Failed to parse the authentication response.");
+        setDetail("Raw response: " + rawText.slice(0, 300));
+        setTimeout(() => navigate("/apply"), 6000);
+        return;
+      }
+
+      if (!res.ok) {
+        const msg =
+          typeof data.error === "string"
+            ? data.error
+            : "Authentication failed. Please try again.";
+        setError(msg);
+
+        // Surface missing-env-var errors from the function clearly
+        if (res.status === 503) {
+          setDetail(
+            "The Cloudflare Pages Function is running but a required environment variable " +
+            "(DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, or SESSION_SECRET) is missing. " +
+            "Set them in Cloudflare Pages → Settings → Environment Variables and redeploy."
+          );
+        }
+
+        setTimeout(() => navigate("/apply"), 5000);
+        return;
+      }
+
+      if (
+        typeof data.user !== "object" ||
+        !data.user ||
+        typeof data.session_token !== "string"
+      ) {
+        setError("Authentication response was missing required fields.");
         setTimeout(() => navigate("/apply"), 4000);
-      });
+        return;
+      }
+
+      sessionStorage.setItem("discord_user", JSON.stringify(data.user));
+      sessionStorage.setItem("discord_token", data.session_token as string);
+      navigate(returnTo, { replace: true });
+    };
+
+    exchangeCode();
   }, []);
 
   return (
     <div className="min-h-screen pt-32 pb-20 px-4 flex items-center justify-center">
-      <div className="text-center max-w-md">
+      <div className="text-center max-w-lg">
         {error ? (
           <>
             <p className="font-body text-xs tracking-[0.5em] uppercase mb-4" style={{ color: "hsl(0 84% 60%)" }}>
@@ -65,6 +149,17 @@ const AuthCallback = () => {
             </h1>
             <div className="ornament-line h-px w-32 mx-auto mb-6" />
             <p className="font-body text-sm text-muted-foreground mb-4">{error}</p>
+            {detail && (
+              <div
+                className="rounded-sm p-4 mb-4 text-left"
+                style={{
+                  background: "hsl(0 60% 10% / 0.4)",
+                  border: "1px solid hsl(0 60% 28% / 0.4)",
+                }}
+              >
+                <p className="font-body text-xs text-muted-foreground leading-relaxed break-words">{detail}</p>
+              </div>
+            )}
             <p className="font-body text-xs text-muted-foreground opacity-60">
               Redirecting you back in a moment…
             </p>
