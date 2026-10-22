@@ -80,6 +80,11 @@ const FORM_CONFIG: Record<string, {
   },
 };
 
+const isClientIdConfigured = () => {
+  const id = import.meta.env.VITE_DISCORD_CLIENT_ID;
+  return id && id !== "undefined" && id.trim() !== "";
+};
+
 const ApplicationForm = ({ type, onBack }: Props) => {
   const { user, loading: authLoading, login, getToken } = useDiscordAuth();
   const config = FORM_CONFIG[type];
@@ -241,13 +246,15 @@ const ApplicationForm = ({ type, onBack }: Props) => {
               size="lg"
               className="western-gradient text-sm font-body font-medium tracking-widest uppercase px-10 py-6 border-0 text-foreground hover:opacity-90 transition-all hover:scale-105"
               onClick={() => login("/apply")}
+              disabled={!isClientIdConfigured()}
             >
               <LogIn className="mr-2 h-4 w-4" />
               Sign In with Discord
             </Button>
-            {!import.meta.env.VITE_DISCORD_CLIENT_ID && (
+            {!isClientIdConfigured() && (
               <p className="font-body text-xs text-muted-foreground mt-6 opacity-60">
-                Note: Discord OAuth is not yet configured. Set VITE_DISCORD_CLIENT_ID to enable login.
+                Discord OAuth is not yet configured on this deployment. The site owner must set{" "}
+                <code className="font-mono">VITE_DISCORD_CLIENT_ID</code> in Cloudflare Pages and redeploy.
               </p>
             )}
           </div>
