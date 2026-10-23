@@ -11,6 +11,7 @@ interface Env {
 interface Application {
   id: string;
   status: string;
+  type?: string | null;
   applicant_discord?: string | null;
   applicant_name?: string | null;
 }
@@ -19,6 +20,7 @@ interface DiscordResult {
   ok: boolean;
   error?: string;
   skipped?: boolean;
+  data?: any;
 }
 
 async function verifyAdminToken(
@@ -53,6 +55,7 @@ async function verifyAdminToken(
     if (!valid) return null;
 
     const payload = JSON.parse(atob(payloadB64));
+
     if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
@@ -68,7 +71,7 @@ async function discordRequest(
   url: string,
   method: string,
   body?: unknown
-): Promise<DiscordResult & { data?: any }> {
+): Promise<DiscordResult> {
   try {
     const response = await fetch(url, {
       method,
@@ -89,12 +92,21 @@ async function discordRequest(
       };
     }
 
-    if (response.status === 204) return { ok: true };
+    if (response.status === 204) {
+      return { ok: true };
+    }
 
-    return { ok: true, data: await response.json() };
+    return {
+      ok: true,
+      data: await response.json(),
+    };
   } catch (error) {
     console.error("Discord request failed:", error);
-    return { ok: false, error: "Could not reach Discord" };
+
+    return {
+      ok: false,
+      error: "Could not reach Discord",
+    };
   }
 }
 
@@ -136,6 +148,16 @@ async function assignWhitelistedRole(
   );
 }
 
+function formatApplicationType(type?: string | null): string {
+  if (!type?.trim()) return "General";
+
+  return type
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
 export const onRequestPatch: PagesFunction<Env> = async (context) => {
   const headers = {
     "Content-Type": "application/json",
@@ -143,6 +165,7 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
   };
 
   const env = context.env;
+
   const token = (
     context.request.headers.get("Authorization") ?? ""
   ).replace(/^Bearer\s+/, "");
@@ -150,19 +173,19 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
   const admin = await verifyAdminToken(token, env.ADMIN_JWT_SECRET);
 
   if (!admin) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers }
+    );
   }
 
   const appId = context.params.id;
 
   if (!appId) {
-    return new Response(JSON.stringify({ error: "Application ID required" }), {
-      status: 400,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({ error: "Application ID required" }),
+      { status: 400, headers }
+    );
   }
 
   let body: {
@@ -174,10 +197,10 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
   try {
     body = await context.request.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-      status: 400,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON body" }),
+      { status: 400, headers }
+    );
   }
 
   const allowedStatuses = [
@@ -192,13 +215,13 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
     body.status !== undefined &&
     !allowedStatuses.includes(body.status)
   ) {
-    return new Response(JSON.stringify({ error: "Invalid status value" }), {
-      status: 400,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({ error: "Invalid status value" }),
+      { status: 400, headers }
+    );
   }
 
-  // Load the application first so Discord decisions use its saved user ID.
+  // Load the application and its saved application type.
   const lookup = await fetch(
     `${env.SUPABASE_URL}/rest/v1/applications?id=eq.${encodeURIComponent(appId)}&select=*`,
     {
@@ -222,16 +245,16 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
   const application = rows[0];
 
   if (!application) {
-    return new Response(JSON.stringify({ error: "Application not found" }), {
-      status: 404,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({ error: "Application not found" }),
+      { status: 404, headers }
+    );
   }
 
   const decision = body.status;
   const isDecision = decision === "Accepted" || decision === "Denied";
 
-  // Prevent an already-decided application from being decided again.
+  // Do not allow a second final decision through this endpoint.
   if (
     isDecision &&
     (application.status === "Accepted" || application.status === "Denied")
@@ -246,7 +269,9 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
 
   const updates: Record<string, unknown> = {};
 
-  if (body.status !== undefined) updates.status = body.status;
+  if (body.status !== undefined) {
+    updates.status = body.status;
+  }
 
   if (body.assigned_reviewer !== undefined) {
     updates.assigned_reviewer = body.assigned_reviewer;
@@ -291,7 +316,7 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
     ? updatedRows[0]
     : updatedRows;
 
-  // Other statuses do not trigger Discord messages or role changes.
+  // Only final decisions trigger Discord actions.
   if (!isDecision) {
     return new Response(
       JSON.stringify({
@@ -310,18 +335,18 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
         application: updatedApplication,
         discord: {
           ok: false,
-          error:
-            "No applicant Discord ID is saved. The decision was saved, but Discord actions were skipped.",
+          error: "No applicant Discord ID is saved. The decision was saved, but Discord actions were skipped.",
         },
       }),
       { status: 200, headers }
     );
   }
 
+  const applicantName = application.applicant_name || "there";
+  const applicationType = formatApplicationType(application.type);
+
   let role: DiscordResult = { ok: true, skipped: true };
   let dm: DiscordResult;
-
-  const applicantName = application.applicant_name || "there";
 
   if (decision === "Accepted") {
     role = await assignWhitelistedRole(
@@ -332,13 +357,13 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
     dm = await sendDiscordDM(
       env,
       application.applicant_discord,
-      `Hi ${applicantName}! Your BelladonnaRP application has been accepted. Welcome to the city!`
+      `Hi ${applicantName}! Your BelladonnaRP ${applicationType} has been approved. Welcome to the city!`
     );
   } else {
     dm = await sendDiscordDM(
       env,
       application.applicant_discord,
-      `Hi ${applicantName}, thank you for applying to BelladonnaRP. Unfortunately, your application has not been accepted at this time.`
+      `Hi ${applicantName}, thank you for submitting your BelladonnaRP ${applicationType}. Unfortunately, your application has not been approved at this time.`
     );
   }
 
@@ -354,7 +379,7 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
         dm,
         note: discordSuccess
           ? "Discord actions completed."
-          : "The application decision was saved, but one or more Discord actions failed. Review the results before retrying.",
+          : "The application decision was saved, but one or more Discord actions failed.",
       },
     }),
     { status: 200, headers }
