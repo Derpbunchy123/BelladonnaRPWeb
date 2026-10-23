@@ -192,7 +192,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       false,
       ["sign"]
     );
-    const payloadStr = btoa(JSON.stringify(payload));
+    const payloadBytes = encoder.encode(JSON.stringify(payload));
+const payloadBinary = Array.from(
+  payloadBytes,
+  (byte) => String.fromCharCode(byte)
+).join("");
+const payloadStr = btoa(payloadBinary);
     const sig = await crypto.subtle.sign(
       "HMAC",
       key,
