@@ -52,13 +52,13 @@ export function useDiscordAuth() {
     // the Discord Developer Portal under your application → OAuth2 → Redirects.
     // For Cloudflare Pages it should be: https://yourdomain.pages.dev/auth/callback
     // (and your production domain if you have a custom one).
-   const redirectUri = "https://belladonnarp.com/auth/callback";
+    const redirectUri = `${window.location.origin}/auth/callback`;
     const scope = encodeURIComponent("identify email");
 
     const url =
       `https://discord.com/api/oauth2/authorize` +
       `?client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${redirectUri}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
       `&state=${encodeURIComponent(state)}`;
